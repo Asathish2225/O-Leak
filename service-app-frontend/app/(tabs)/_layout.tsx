@@ -1,21 +1,25 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { View } from "react-native";
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#111827",
-        tabBarInactiveTintColor: "#9ca3af",
+        tabBarActiveTintColor: "#FF6B00",
+        tabBarInactiveTintColor: "#555",
         tabBarStyle: {
-          borderTopWidth: 0,
-          elevation: 10,
-          shadowColor: "#000",
-          shadowOpacity: 0.06,
-          shadowRadius: 10,
-          height: 65,
-          paddingBottom: 10,
+          backgroundColor: "#111",
+          borderTopWidth: 1,
+          borderTopColor: "#1E1E1E",
+          height: 68,
+          paddingBottom: 12,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "700",
         },
       }}
     >
@@ -23,17 +27,21 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: "center" }}>
+              <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
+            </View>
           ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: "My Bookings",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
+          title: "Bookings",
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: "center" }}>
+              <Ionicons name={focused ? "calendar" : "calendar-outline"} size={24} color={color} />
+            </View>
           ),
         }}
       />

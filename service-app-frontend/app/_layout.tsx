@@ -10,9 +10,7 @@ function RootNavigator() {
 
   useEffect(() => {
     if (isLoading) return;
-
     const inAuthGroup = segments[0] === "(tabs)";
-
     if (!token && inAuthGroup) {
       router.replace("/login");
     } else if (token && !inAuthGroup) {
@@ -22,19 +20,21 @@ function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#111827" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0F0F0F" }}>
+        <ActivityIndicator size="large" color="#FF6B00" />
       </View>
     );
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#0F0F0F" } }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
       <Stack.Screen name="workers/[id]" />
+      <Stack.Screen name="worker-detail/[workerId]" />
       <Stack.Screen name="booking/index" />
+      <Stack.Screen name="booking-success" />
     </Stack>
   );
 }

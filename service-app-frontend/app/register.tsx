@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  StyleSheet, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterScreen() {
@@ -11,89 +13,81 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const router = useRouter();
 
   const handleRegister = async () => {
     if (!name || !phone || !password || !confirm) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
+      Alert.alert("Error", "Please fill in all fields"); return;
     }
     if (password !== confirm) {
-      Alert.alert("Error", "Passwords do not match");
-      return;
+      Alert.alert("Error", "Passwords do not match"); return;
     }
     if (phone.length !== 10) {
-      Alert.alert("Error", "Phone must be 10 digits");
-      return;
+      Alert.alert("Error", "Phone must be 10 digits"); return;
     }
     setLoading(true);
     try {
       await register(name, phone, password);
-      Alert.alert("Success", "Account created! Please login.", [
-        { text: "OK", onPress: () => router.replace("/login") },
+      Alert.alert("🎉 Account Created!", "Please login to continue.", [
+        { text: "Login Now", onPress: () => router.replace("/login") },
       ]);
     } catch (err: any) {
-      const msg = err?.response?.data?.error || "Registration failed. Please try again.";
-      Alert.alert("Registration Failed", msg);
+      const msg = err?.response?.data?.error || "Registration failed.";
+      Alert.alert("Failed", msg);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Find trusted home professionals</Text>
+  const fields = [
+    { label: "Full Name", icon: "person-outline", value: name, setter: setName, keyboard: "default", secure: false },
+    { label: "Phone Number", icon: "call-outline", value: phone, setter: setPhone, keyboard: "phone-pad", secure: false },
+    { label: "Password", icon: "lock-closed-outline", value: password, setter: setPassword, keyboard: "default", secure: !showPass },
+    { label: "Confirm Password", icon: "shield-checkmark-outline", value: confirm, setter: setConfirm, keyboard: "default", secure: true },
+  ];
 
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          placeholderTextColor="#9ca3af"
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Phone Number"
-          placeholderTextColor="#9ca3af"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#9ca3af"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm Password"
-          placeholderTextColor="#9ca3af"
-          secureTextEntry
-          value={confirm}
-          onChangeText={setConfirm}
-        />
+  return (
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#0F0F0F" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
+        </TouchableOpacity>
+
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Join thousands of happy customers</Text>
+
+        {fields.map((f, i) => (
+          <View key={i} style={styles.inputWrapper}>
+            <Ionicons name={f.icon as any} size={20} color="#FF6B00" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder={f.label}
+              placeholderTextColor="#555"
+              keyboardType={f.keyboard as any}
+              secureTextEntry={f.secure}
+              value={f.value}
+              onChangeText={f.setter}
+            />
+            {f.label === "Password" && (
+              <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+                <Ionicons name={showPass ? "eye-off-outline" : "eye-outline"} size={20} color="#555" />
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
 
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
           {loading
-            ? <ActivityIndicator color="white" />
+            ? <ActivityIndicator color="#FFF" />
             : <Text style={styles.buttonText}>Create Account</Text>
           }
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => router.push("/login")}>
-          <Text style={styles.link}>
-            Already have an account? <Text style={styles.linkBold}>Login</Text>
-          </Text>
+          <Text style={styles.link}>Already have an account? <Text style={styles.linkBold}>Login</Text></Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -101,55 +95,22 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-    padding: 24,
-    paddingTop: 80,
+  container: { flexGrow: 1, backgroundColor: "#0F0F0F", padding: 24, paddingTop: 60 },
+  back: { marginBottom: 24, width: 40 },
+  title: { fontSize: 32, fontWeight: "900", color: "#FFF", marginBottom: 6 },
+  subtitle: { color: "#666", fontSize: 15, marginBottom: 32 },
+  inputWrapper: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#1A1A1A", borderRadius: 14, paddingHorizontal: 16,
+    marginBottom: 14, borderWidth: 1, borderColor: "#2A2A2A",
   },
-  title: {
-    fontSize: 34,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6b7280",
-    marginBottom: 36,
-  },
-  input: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    color: "#111827",
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, color: "#FFF", fontSize: 16, paddingVertical: 16 },
   button: {
-    backgroundColor: "#111827",
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 24,
+    backgroundColor: "#FF6B00", borderRadius: 14,
+    paddingVertical: 16, alignItems: "center", marginTop: 10, marginBottom: 20,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  link: {
-    textAlign: "center",
-    color: "#6b7280",
-    fontSize: 15,
-  },
-  linkBold: {
-    color: "#111827",
-    fontWeight: "700",
-  },
+  buttonText: { color: "#FFF", fontSize: 17, fontWeight: "800" },
+  link: { textAlign: "center", color: "#666", fontSize: 15 },
+  linkBold: { color: "#FF6B00", fontWeight: "700" },
 });
