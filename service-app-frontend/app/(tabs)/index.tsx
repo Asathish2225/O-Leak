@@ -1,146 +1,239 @@
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  TextInput,
+ TextInput,
+  Image,
+  ScrollView,
 } from "react-native";
 
-import { MaterialIcons } from "@expo/vector-icons";
-
-import { useEffect, useState } from "react";
-
-import { router } from "expo-router";
-
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
+import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
-
   const [services, setServices] = useState<any[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     fetchServices();
   }, []);
 
   const fetchServices = async () => {
-
     try {
-
       const response = await axios.get(
         "https://o-leak-backend.onrender.com/api/services"
       );
 
       setServices(response.data);
-
     } catch (error) {
-
       console.log(error);
+    }
+  };
+
+  const getIcon = (name: string): any => {
+    switch (name.toLowerCase()) {
+      case "electrician":
+        return "flash";
+
+      case "plumber":
+        return "water";
+
+      case "painter":
+        return "color-palette";
+
+      case "carpenter":
+        return "hammer";
+
+      case "ac repair":
+        return "snow";
+
+      default:
+        return "construct";
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.greeting}>Hello Sathish 👋</Text>
 
-        <Text style={styles.subtitle}>
+        <Text style={styles.subText}>
           Find nearby service professionals
         </Text>
       </View>
 
+      {/* Search */}
       <View style={styles.searchContainer}>
-        <MaterialIcons name="search" size={24} color="gray" />
+        <Ionicons name="search" size={20} color="#6b7280" />
 
         <TextInput
           placeholder="Search services..."
+          placeholderTextColor="#9ca3af"
           style={styles.searchInput}
         />
       </View>
 
+      {/* Banner */}
+      <View style={styles.banner}>
+        <Text style={styles.bannerTitle}>
+          Book Trusted Home Services
+        </Text>
+
+        <Text style={styles.bannerSubtitle}>
+          Fast • Reliable • Affordable
+        </Text>
+      </View>
+
+      {/* Services */}
       <Text style={styles.sectionTitle}>Popular Services</Text>
 
       <View style={styles.servicesContainer}>
-
-        {services.map((service) => (
-
+        {services.map((item: any) => (
           <TouchableOpacity
-            key={service.id}
+            key={item.id}
             style={styles.card}
             onPress={() =>
               router.push({
                 pathname: "/workers/[id]",
-                params: { id: service.id.toString() },
+                params: { id: item.id.toString() },
               })
             }
           >
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name={getIcon(item.name)}
+                size={28}
+                color="#111827"
+              />
+            </View>
 
-            <MaterialIcons
-              name="home-repair-service"
-              size={40}
-              color="#27ae60"
-            />
-
-            <Text style={styles.cardText}>
-              {service.name}
+            <Text style={styles.cardTitle}>
+              {item.name}
             </Text>
-
           </TouchableOpacity>
         ))}
-
       </View>
 
+      {/* Top Professionals */}
+      <Text style={styles.sectionTitle}>
+        Top Professionals
+      </Text>
+
+      <View style={styles.workerCard}>
+        <Image
+          source={{
+            uri: "https://randomuser.me/api/portraits/men/32.jpg",
+          }}
+          style={styles.workerImage}
+        />
+
+        <View style={{ flex: 1 }}>
+          <Text style={styles.workerName}>
+            Arun Kumar
+          </Text>
+
+          <Text style={styles.workerJob}>
+            Electrician
+          </Text>
+
+          <View style={styles.ratingRow}>
+            <Ionicons
+              name="star"
+              size={16}
+              color="#facc15"
+            />
+
+            <Text style={styles.ratingText}>
+              4.8 • 5 Years Exp
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.bookBtn}>
+          <Text style={styles.bookBtnText}>
+            Book
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
-    backgroundColor: "#f5f7fa",
-    paddingHorizontal: 16,
+    backgroundColor: "#f9fafb",
+    paddingHorizontal: 18,
   },
 
   header: {
     marginTop: 60,
-    marginBottom: 20,
   },
 
   greeting: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#222",
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#111827",
   },
 
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
+  subText: {
+    color: "#6b7280",
     marginTop: 6,
+    fontSize: 15,
   },
 
   searchContainer: {
-    backgroundColor: "#fff",
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    height: 55,
-    marginBottom: 24,
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    paddingHorizontal: 15,
+    marginTop: 25,
+    height: 58,
+    shadowColor: "#000",
+    shadowOpacity: 0.03,
+    shadowRadius: 5,
+    elevation: 2,
   },
 
   searchInput: {
     marginLeft: 10,
     flex: 1,
     fontSize: 16,
+    color: "#111827",
+  },
+
+  banner: {
+    backgroundColor: "#111827",
+    borderRadius: 24,
+    padding: 24,
+    marginTop: 25,
+  },
+
+  bannerTitle: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "700",
+  },
+
+  bannerSubtitle: {
+    color: "#d1d5db",
+    marginTop: 10,
+    fontSize: 15,
   },
 
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#222",
+    fontSize: 24,
+    fontWeight: "700",
+    marginTop: 32,
+    marginBottom: 18,
+    color: "#111827",
   },
 
   servicesContainer: {
@@ -150,18 +243,81 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     width: "48%",
-    borderRadius: 18,
-    paddingVertical: 28,
+    borderRadius: 24,
+    paddingVertical: 30,
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
-  cardText: {
-    marginTop: 12,
-    fontSize: 16,
+  iconContainer: {
+    backgroundColor: "#f3f4f6",
+    padding: 18,
+    borderRadius: 50,
+  },
+
+  cardTitle: {
+    marginTop: 14,
     fontWeight: "600",
-    color: "#333",
+    fontSize: 16,
+    color: "#111827",
+  },
+
+  workerCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  workerImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginRight: 15,
+  },
+
+  workerName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  workerJob: {
+    color: "#6b7280",
+    marginTop: 4,
+  },
+
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 7,
+  },
+
+  ratingText: {
+    marginLeft: 5,
+    color: "#4b5563",
+  },
+
+  bookBtn: {
+    backgroundColor: "#111827",
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    borderRadius: 14,
+  },
+
+  bookBtnText: {
+    color: "white",
+    fontWeight: "700",
   },
 });

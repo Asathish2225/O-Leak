@@ -2,6 +2,7 @@ package com.serviceapp.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.List;
 
 @Entity
 @Table(name = "workers")
@@ -29,7 +30,11 @@ public class Worker {
 
     private Boolean available;
 
-    @ManyToOne
-    @JoinColumn(name = "service_id")
-    private ServiceCategory serviceCategory;
+    @ManyToMany
+    @JoinTable(
+            name = "worker_services",
+            joinColumns = @JoinColumn(name = "worker_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_id")
+    )
+    private List<ServiceCategory> serviceCategories;
 }
