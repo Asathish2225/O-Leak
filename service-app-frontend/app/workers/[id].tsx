@@ -28,7 +28,7 @@ export default function WorkersScreen() {
     try {
 
       const response = await axios.get(
-        `http://192.168.0.108:8080/api/workers/nearby?serviceId=${id}&latitude=12.9716&longitude=77.5946`
+        `https://o-leak-backend.onrender.com/api/workers/nearby?serviceId=${id}&latitude=12.9716&longitude=77.5946`
       );
 
       setWorkers(response.data);
@@ -44,7 +44,7 @@ const bookWorker = async (workerId: number) => {
   try {
 
     const response = await axios.post(
-      "http://192.168.0.108:8080/api/bookings",
+      "http://https://o-leak-backend.onrender.com/api/bookings",
       {
         customerName: "Sathish",
         customerPhone: "9876543210",

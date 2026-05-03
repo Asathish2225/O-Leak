@@ -28,7 +28,7 @@ export default function HomeScreen() {
     try {
 
       const response = await axios.get(
-        "http://192.168.0.108:8080/api/services"
+        "https://o-leak-backend.onrender.com/api/services"
       );
 
       setServices(response.data);
