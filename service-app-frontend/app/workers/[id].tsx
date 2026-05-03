@@ -1,136 +1,116 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ScrollView,
+  View, Text, StyleSheet, Image, TouchableOpacity,
+  ScrollView, ActivityIndicator, Alert,
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import * as Location from "expo-location";
+import api from "@/utils/api";
 
 export default function WorkersScreen() {
+  const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
+  const [workers, setWorkers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const workers = [
-    {
-      id: 1,
-      name: "Arun Kumar",
-      profession: "Electrician",
-      rating: 4.8,
-      experience: "5 Years",
-      price: "₹399/service",
-      location: "2 km away",
-      available: true,
-      image:
-        "https://randomuser.me/api/portraits/men/32.jpg",
-    },
+  useEffect(() => {
+    fetchNearbyWorkers();
+  }, []);
 
-    {
-      id: 2,
-      name: "Rahul Sharma",
-      profession: "Electrician",
-      rating: 4.7,
-      experience: "3 Years",
-      price: "₹299/service",
-      location: "4 km away",
-      available: true,
-      image:
-        "https://randomuser.me/api/portraits/men/45.jpg",
-    },
+  const fetchNearbyWorkers = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
 
-    {
-      id: 3,
-      name: "Vijay Kumar",
-      profession: "Electrician",
-      rating: 4.9,
-      experience: "7 Years",
-      price: "₹499/service",
-      location: "1 km away",
-      available: false,
-      image:
-        "https://randomuser.me/api/portraits/men/55.jpg",
-    },
-  ];
+      let latitude = 13.0827; // Default: Chennai
+      let longitude = 80.2707;
+
+      if (status === "granted") {
+        const location = await Location.getCurrentPositionAsync({});
+        latitude = location.coords.latitude;
+        longitude = location.coords.longitude;
+      }
+
+      const res = await api.get("/api/workers/nearby", {
+        params: { serviceId: id, latitude, longitude },
+      });
+      setWorkers(res.data);
+    } catch (e) {
+      console.log("Failed to fetch workers:", e);
+      Alert.alert("Error", "Could not load workers. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#111827" />
+        <Text style={{ marginTop: 12, color: "#6b7280" }}>Finding nearby workers...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Available Professionals</Text>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <Ionicons name="arrow-back" size={24} color="#111827" />
+      </TouchableOpacity>
 
-      {workers.map((worker) => (
-        <View key={worker.id} style={styles.card}>
-          <Image
-            source={{ uri: worker.image }}
-            style={styles.image}
-          />
+      <Text style={styles.title}>{name ?? "Professionals"}</Text>
 
-          <View style={styles.infoContainer}>
-            <Text style={styles.name}>{worker.name}</Text>
-
-            <Text style={styles.profession}>
-              {worker.profession}
-            </Text>
-
-            <View style={styles.row}>
-              <Ionicons
-                name="star"
-                size={16}
-                color="#f1c40f"
-              />
-
-              <Text style={styles.rating}>
-                {worker.rating}
-              </Text>
-
-              <Text style={styles.experience}>
-                • {worker.experience} Exp
-              </Text>
-            </View>
-
-            <View style={styles.row}>
-              <Ionicons
-                name="location"
-                size={15}
-                color="#777"
-              />
-
-              <Text style={styles.location}>
-                {worker.location}
-              </Text>
-            </View>
-
-            <Text style={styles.price}>
-              {worker.price}
-            </Text>
-
-            <Text
-              style={[
-                styles.status,
-                {
-                  color: worker.available
-                    ? "#27ae60"
-                    : "red",
-                },
-              ]}
-            >
-              {worker.available
-                ? "Available Now"
-                : "Currently Busy"}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.bookBtn}
-            onPress={() => router.push("/booking")}
-          >
-            <Text style={styles.bookText}>
-              Book Now
-            </Text>
-          </TouchableOpacity>
+      {workers.length === 0 ? (
+        <View style={styles.center}>
+          <Ionicons name="person-outline" size={60} color="#d1d5db" />
+          <Text style={styles.emptyText}>No workers available nearby</Text>
+          <Text style={styles.emptySubText}>Try again later or expand your search area</Text>
         </View>
-      ))}
+      ) : (
+        workers.map((worker) => (
+          <View key={worker.id} style={styles.card}>
+            <Image
+              source={{ uri: `https://randomuser.me/api/portraits/men/${(worker.id % 70) + 1}.jpg` }}
+              style={styles.image}
+            />
+
+            <View style={styles.infoContainer}>
+              <Text style={styles.name}>{worker.fullName}</Text>
+              <Text style={styles.profession}>{worker.serviceCategory?.name}</Text>
+
+              <View style={styles.row}>
+                <Ionicons name="star" size={16} color="#f1c40f" />
+                <Text style={styles.rating}>{worker.rating?.toFixed(1) ?? "New"}</Text>
+                <Text style={styles.experience}>• {worker.experience} Exp</Text>
+              </View>
+
+              <Text
+                style={[styles.status, { color: worker.available ? "#10b981" : "#ef4444" }]}
+              >
+                {worker.available ? "● Available Now" : "● Currently Busy"}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.bookBtn, !worker.available && styles.bookBtnDisabled]}
+              disabled={!worker.available}
+              onPress={() =>
+                router.push({
+                  pathname: "/booking",
+                  params: {
+                    workerId: worker.id.toString(),
+                    workerName: worker.fullName,
+                  },
+                })
+              }
+            >
+              <Text style={styles.bookText}>
+                {worker.available ? "Book" : "Busy"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
 
       <View style={{ height: 30 }} />
     </ScrollView>
@@ -138,97 +118,29 @@ export default function WorkersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f7fa",
-    padding: 18,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 50,
-    marginBottom: 20,
-    color: "#222",
-  },
-
+  container: { flex: 1, backgroundColor: "#f5f7fa", padding: 18 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 100 },
+  backBtn: { marginTop: 50, marginBottom: 4, width: 40 },
+  title: { fontSize: 28, fontWeight: "bold", marginBottom: 20, color: "#222" },
+  emptyText: { fontSize: 18, fontWeight: "600", color: "#374151", marginTop: 16 },
+  emptySubText: { color: "#6b7280", marginTop: 8, textAlign: "center" },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 18,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-    elevation: 3,
+    backgroundColor: "#fff", borderRadius: 20, padding: 16, marginBottom: 18,
+    flexDirection: "row", alignItems: "center",
+    shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 5, elevation: 3,
   },
-
-  image: {
-    width: "100%",
-    height: 180,
-    borderRadius: 18,
-  },
-
-  infoContainer: {
-    marginTop: 15,
-  },
-
-  name: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#222",
-  },
-
-  profession: {
-    color: "#666",
-    marginTop: 4,
-    fontSize: 15,
-  },
-
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-
-  rating: {
-    marginLeft: 5,
-    fontWeight: "600",
-  },
-
-  experience: {
-    color: "#666",
-    marginLeft: 6,
-  },
-
-  location: {
-    marginLeft: 5,
-    color: "#666",
-  },
-
-  price: {
-    marginTop: 12,
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#27ae60",
-  },
-
-  status: {
-    marginTop: 6,
-    fontWeight: "600",
-  },
-
+  image: { width: 72, height: 72, borderRadius: 36, marginRight: 14 },
+  infoContainer: { flex: 1 },
+  name: { fontSize: 17, fontWeight: "bold", color: "#222" },
+  profession: { color: "#6b7280", marginTop: 2, fontSize: 13 },
+  row: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+  rating: { marginLeft: 4, fontWeight: "600", fontSize: 13 },
+  experience: { color: "#6b7280", marginLeft: 4, fontSize: 13 },
+  status: { marginTop: 6, fontWeight: "600", fontSize: 13 },
   bookBtn: {
-    marginTop: 18,
-    backgroundColor: "#27ae60",
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
+    backgroundColor: "#111827", paddingHorizontal: 14,
+    paddingVertical: 10, borderRadius: 12,
   },
-
-  bookText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  bookBtnDisabled: { backgroundColor: "#d1d5db" },
+  bookText: { color: "white", fontWeight: "700", fontSize: 13 },
 });

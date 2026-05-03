@@ -1,8 +1,8 @@
 package com.serviceapp.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
 
 @Entity
 @Table(name = "workers")
@@ -30,11 +30,8 @@ public class Worker {
 
     private Boolean available;
 
-    @ManyToMany
-    @JoinTable(
-            name = "worker_services",
-            joinColumns = @JoinColumn(name = "worker_id"),
-            inverseJoinColumns = @JoinColumn(name = "service_id")
-    )
-    private List<ServiceCategory> serviceCategories;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "service_category_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private ServiceCategory serviceCategory;
 }
