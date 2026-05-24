@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
-  Alert, RefreshControl, StatusBar,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  RefreshControl, StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -10,89 +10,100 @@ import api from "@/utils/api";
 
 function SkeletonCard() {
   return (
-    <View style={[styles.card, { opacity: 0.4 }]}>
-      <View style={[styles.avatar, { backgroundColor: "#2A2A2A" }]} />
-      <View style={{ flex: 1, gap: 8 }}>
-        <View style={{ height: 16, backgroundColor: "#2A2A2A", borderRadius: 8, width: "60%" }} />
-        <View style={{ height: 12, backgroundColor: "#2A2A2A", borderRadius: 8, width: "40%" }} />
-        <View style={{ height: 12, backgroundColor: "#2A2A2A", borderRadius: 8, width: "80%" }} />
+    <View style={[styles.card, { opacity: 0.35 }]}>
+      <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: "#2A2A2A" }} />
+      <View style={{ flex: 1, gap: 10 }}>
+        <View style={{ height: 15, backgroundColor: "#2A2A2A", borderRadius: 8, width: "55%" }} />
+        <View style={{ height: 12, backgroundColor: "#2A2A2A", borderRadius: 8, width: "38%" }} />
+        <View style={{ height: 12, backgroundColor: "#2A2A2A", borderRadius: 8, width: "75%" }} />
       </View>
     </View>
   );
 }
 
-function SectionHeader({ icon, title, subtitle, color = "#FF6B00" }: any) {
+function SectionLabel({ icon, title, subtitle, color = "#FF6B00" }: any) {
   return (
-    <View style={styles.sectionHeader}>
-      <View style={[styles.sectionIconBg, { backgroundColor: color + "20" }]}>
-        <Ionicons name={icon} size={16} color={color} />
+    <View style={styles.sectionLabel}>
+      <View style={[styles.sectionIconBg, { backgroundColor: color + "22" }]}>
+        <Ionicons name={icon} size={15} color={color} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        {subtitle && <Text style={styles.sectionSubtitle}>{subtitle}</Text>}
+        {subtitle ? <Text style={styles.sectionSub}>{subtitle}</Text> : null}
       </View>
     </View>
   );
 }
 
 function WorkerCard({ item, index, userCoords, onPress, showRank }: any) {
-  const getDistance = (lat2: number, lng2: number) => {
+  const haversine = (lat2: number, lng2: number) => {
     const R = 6371;
     const dLat = ((lat2 - userCoords.lat) * Math.PI) / 180;
     const dLng = ((lng2 - userCoords.lng) * Math.PI) / 180;
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos((userCoords.lat * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) ** 2;
     return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
   };
 
-  const getETA = (km: string) => {
-    const mins = Math.round(parseFloat(km) * 4);
-    return mins < 5 ? "~5 min" : `~${mins} min`;
-  };
-
-  const km = getDistance(item.latitude, item.longitude);
-  const eta = getETA(km);
-  const initials = item.fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase();
+  const km = haversine(item.latitude, item.longitude);
+  const mins = Math.round(parseFloat(km) * 4);
+  const eta = mins < 5 ? "~5 min" : `~${mins} min`;
+  const initials = item.fullName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase();
   const rankColors = ["#FFD700", "#C0C0C0", "#CD7F32"];
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => onPress(item, km, eta)}>
+    <TouchableOpacity
+      style={[styles.card, !item.available && styles.cardBusy]}
+      activeOpacity={0.82}
+      onPress={() => onPress(item, km, eta)}
+    >
       {showRank && index < 3 && (
         <View style={[styles.rankBadge, { backgroundColor: rankColors[index] }]}>
           <Text style={styles.rankText}>#{index + 1}</Text>
         </View>
       )}
 
-      <View style={[styles.avatar, { backgroundColor: item.available ? "#FF6B00" + "30" : "#333" }]}>
-        <Text style={[styles.avatarText, { color: item.available ? "#FF6B00" : "#666" }]}>{initials}</Text>
+      <View style={[styles.avatar, { backgroundColor: item.available ? "#FF6B0028" : "#252525" }]}>
+        <Text style={[styles.avatarText, { color: item.available ? "#FF6B00" : "#555" }]}>
+          {initials}
+        </Text>
       </View>
 
-      <View style={styles.info}>
+      <View style={styles.cardInfo}>
         <View style={styles.nameRow}>
-          <Text style={styles.workerName}>{item.fullName}</Text>
+          <Text style={styles.workerName} numberOfLines={1}>{item.fullName}</Text>
           {item.available && <View style={styles.onlineDot} />}
         </View>
         <Text style={styles.category}>{item.serviceCategory?.name}</Text>
         <View style={styles.ratingRow}>
           {[1, 2, 3, 4, 5].map(i => (
-            <Ionicons key={i} name={i <= Math.round(item.rating ?? 0) ? "star" : "star-outline"} size={11} color="#FFD700" />
+            <Ionicons
+              key={i}
+              name={i <= Math.round(item.rating ?? 0) ? "star" : "star-outline"}
+              size={11}
+              color="#FFD700"
+            />
           ))}
           <Text style={styles.ratingText}>{item.rating?.toFixed(1) ?? "New"}</Text>
-          <Text style={styles.dot}>•</Text>
-          <Text style={styles.experience}>{item.experience}</Text>
+          <Text style={styles.dot}>·</Text>
+          <Text style={styles.exp}>{item.experience}</Text>
         </View>
       </View>
 
-      <View style={styles.rightSide}>
-        <View style={styles.distanceBadge}>
+      <View style={styles.cardRight}>
+        <View style={styles.distBadge}>
           <Ionicons name="location" size={11} color="#FF6B00" />
-          <Text style={styles.distanceText}>{km} km</Text>
+          <Text style={styles.distText}>{km} km</Text>
         </View>
-        <Text style={styles.eta}>{eta}</Text>
-        <View style={[styles.statusPill, { backgroundColor: item.available ? "#4CAF50" + "20" : "#F44336" + "20" }]}>
+        <Text style={styles.etaText}>{eta}</Text>
+        <View style={[styles.statusPill, { backgroundColor: item.available ? "#4CAF5022" : "#F4433622" }]}>
           <Text style={[styles.statusText, { color: item.available ? "#4CAF50" : "#F44336" }]}>
             {item.available ? "Free" : "Busy"}
           </Text>
@@ -102,57 +113,94 @@ function WorkerCard({ item, index, userCoords, onPress, showRank }: any) {
   );
 }
 
+function NoNearbyBanner() {
+  return (
+    <View style={styles.noNearbyBanner}>
+      <View style={styles.noNearbyIcon}>
+        <Ionicons name="location-outline" size={26} color="#FF6B00" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.noNearbyTitle}>No workers near you</Text>
+        <Text style={styles.noNearbyDesc}>
+          No professionals within 5 km — showing all available workers below
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function EmptyState({ onRetry }: any) {
+  return (
+    <View style={styles.empty}>
+      <Ionicons name="person-remove-outline" size={60} color="#2A2A2A" />
+      <Text style={styles.emptyTitle}>No Workers Available</Text>
+      <Text style={styles.emptySub}>
+        No professionals available for this service right now.{"\n"}Please try again later.
+      </Text>
+      <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
+        <Ionicons name="refresh" size={15} color="#FFF" />
+        <Text style={styles.retryText}>Refresh</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 export default function WorkersScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
   const [nearbyWorkers, setNearbyWorkers] = useState<any[]>([]);
-  const [allWorkers, setAllWorkers] = useState<any[]>([]);
+  const [otherWorkers, setOtherWorkers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userCoords, setUserCoords] = useState({ lat: 13.0827, lng: 80.2707 });
   const router = useRouter();
 
-  useEffect(() => { fetchWorkers(); }, []);
+  useEffect(() => { load(); }, []);
 
-  const fetchWorkers = async () => {
+  const load = async () => {
     try {
+      // Step 1: Get location silently
       let lat = 13.0827, lng = 80.2707;
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === "granted") {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+          const loc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Low,
+          });
           lat = loc.coords.latitude;
           lng = loc.coords.longitude;
         }
-      } catch (e) {
-        console.log("Location unavailable, using default");
-      }
-
+      } catch (_) {}
       setUserCoords({ lat, lng });
 
-      // Fetch nearby (within 5km)
-      const nearbyRes = await api.get("/api/workers/nearby", {
-        params: { serviceId: id, latitude: lat, longitude: lng },
-      });
-      setNearbyWorkers(nearbyRes.data);
+      // Step 2: Fetch nearby workers (5 km)
+      let nearby: any[] = [];
+      try {
+        const r = await api.get("/api/workers/nearby", {
+          params: { serviceId: id, latitude: lat, longitude: lng },
+        });
+        nearby = Array.isArray(r.data) ? r.data : [];
+      } catch (_) {}
+      setNearbyWorkers(nearby);
 
-      // Always fetch all workers too (large radius fallback)
-      const allRes = await api.get("/api/workers/nearby", {
-        params: { serviceId: id, latitude: lat, longitude: lng, radius: 9999 },
-      });
-      // Remove duplicates (workers already in nearby list)
-      const nearbyIds = new Set(nearbyRes.data.map((w: any) => w.id));
-      setAllWorkers(allRes.data.filter((w: any) => !nearbyIds.has(w.id)));
-
-    } catch (e: any) {
-      console.log("Error:", e?.response?.status, e?.message);
-      Alert.alert("Error", "Could not load workers. Please try again.");
+      // Step 3: Fetch ALL workers → filter by this service as fallback
+      try {
+        const allRes = await api.get("/api/workers");
+        const all: any[] = Array.isArray(allRes.data) ? allRes.data : [];
+        const nearbyIds = new Set(nearby.map((w: any) => w.id));
+        const others = all.filter(
+          (w: any) =>
+            !nearbyIds.has(w.id) &&
+            String(w.serviceCategory?.id) === String(id)
+        );
+        setOtherWorkers(others);
+      } catch (_) {}
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const handleWorkerPress = (item: any, km: string, eta: string) => {
+  const handlePress = (item: any, km: string, eta: string) => {
     router.push({
       pathname: "/worker-detail/[workerId]",
       params: {
@@ -167,7 +215,9 @@ export default function WorkersScreen() {
     });
   };
 
-  const totalCount = nearbyWorkers.length + allWorkers.length;
+  const total = nearbyWorkers.length + otherWorkers.length;
+  const hasNearby = nearbyWorkers.length > 0;
+  const hasOthers = otherWorkers.length > 0;
 
   return (
     <View style={styles.root}>
@@ -180,144 +230,135 @@ export default function WorkersScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>{name}</Text>
           <Text style={styles.headerSub}>
-            {loading ? "Finding workers..." : `${totalCount} professionals found`}
+            {loading
+              ? "Finding professionals..."
+              : `${total} professional${total !== 1 ? "s" : ""} found`}
           </Text>
         </View>
       </View>
 
-      {loading ? (
-        <View style={{ padding: 20, gap: 14 }}>
-          {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
-        </View>
-      ) : (
-        <FlatList
-          data={[]}
-          renderItem={null}
-          keyExtractor={() => ""}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchWorkers(); }} tintColor="#FF6B00" />
-          }
-          ListHeaderComponent={
-            <View style={{ padding: 20, gap: 14 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); load(); }}
+            tintColor="#FF6B00"
+          />
+        }
+        contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 50 }}
+      >
+        {/* Loading skeletons */}
+        {loading && [1, 2, 3].map(i => <SkeletonCard key={i} />)}
 
-              {/* NEARBY SECTION */}
-              {nearbyWorkers.length > 0 && (
-                <>
-                  <SectionHeader
-                    icon="navigate"
-                    title="Near You"
-                    subtitle={`${nearbyWorkers.length} workers within 5 km · nearest first`}
-                    color="#FF6B00"
-                  />
-                  {nearbyWorkers.map((item, index) => (
-                    <WorkerCard
-                      key={item.id} item={item} index={index}
-                      userCoords={userCoords} onPress={handleWorkerPress} showRank={true}
-                    />
-                  ))}
-                </>
-              )}
+        {/* No nearby banner */}
+        {!loading && !hasNearby && total > 0 && <NoNearbyBanner />}
 
-              {/* NO NEARBY MESSAGE */}
-              {nearbyWorkers.length === 0 && (
-                <View style={styles.noNearbyCard}>
-                  <View style={styles.noNearbyIcon}>
-                    <Ionicons name="location-outline" size={28} color="#FF6B00" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.noNearbyTitle}>No workers near you</Text>
-                    <Text style={styles.noNearbySubtitle}>No one within 5 km — showing all available workers below</Text>
-                  </View>
-                </View>
-              )}
+        {/* Nearby section */}
+        {!loading && hasNearby && (
+          <SectionLabel
+            icon="navigate"
+            title="Near You"
+            subtitle={`${nearbyWorkers.length} workers within 5 km · nearest first`}
+            color="#FF6B00"
+          />
+        )}
+        {!loading && nearbyWorkers.map((item, index) => (
+          <WorkerCard
+            key={item.id} item={item} index={index}
+            userCoords={userCoords} onPress={handlePress} showRank
+          />
+        ))}
 
-              {/* ALL OTHER WORKERS */}
-              {allWorkers.length > 0 && (
-                <>
-                  <SectionHeader
-                    icon="people"
-                    title={nearbyWorkers.length > 0 ? "Other Available Workers" : "All Available Workers"}
-                    subtitle="These workers can travel to your location"
-                    color="#00B4D8"
-                  />
-                  {allWorkers.map((item, index) => (
-                    <WorkerCard
-                      key={item.id} item={item} index={index}
-                      userCoords={userCoords} onPress={handleWorkerPress} showRank={false}
-                    />
-                  ))}
-                </>
-              )}
+        {/* Other workers section */}
+        {!loading && hasOthers && (
+          <SectionLabel
+            icon="people"
+            title={hasNearby ? "Other Available Workers" : "Available Workers"}
+            subtitle="Can travel to your location"
+            color="#00B4D8"
+          />
+        )}
+        {!loading && otherWorkers.map((item, index) => (
+          <WorkerCard
+            key={item.id} item={item} index={index}
+            userCoords={userCoords} onPress={handlePress} showRank={false}
+          />
+        ))}
 
-              {/* TRULY EMPTY */}
-              {totalCount === 0 && (
-                <View style={styles.emptyFull}>
-                  <Ionicons name="person-remove-outline" size={64} color="#333" />
-                  <Text style={styles.emptyTitle}>No Workers Available</Text>
-                  <Text style={styles.emptySubtitle}>
-                    No professionals available for this service right now. Please try again later.
-                  </Text>
-                  <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); fetchWorkers(); }}>
-                    <Ionicons name="refresh" size={16} color="#FFF" />
-                    <Text style={styles.retryText}>Retry</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              <View style={{ height: 30 }} />
-            </View>
-          }
-        />
-      )}
+        {/* Truly empty */}
+        {!loading && total === 0 && (
+          <EmptyState onRetry={() => { setLoading(true); load(); }} />
+        )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#0F0F0F" },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16, gap: 14 },
-  backBtn: { width: 40, height: 40, backgroundColor: "#1A1A1A", borderRadius: 20, justifyContent: "center", alignItems: "center" },
+  header: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16, gap: 14,
+  },
+  backBtn: {
+    width: 40, height: 40, backgroundColor: "#1A1A1A",
+    borderRadius: 20, justifyContent: "center", alignItems: "center",
+  },
   headerTitle: { fontSize: 20, fontWeight: "800", color: "#FFF" },
   headerSub: { color: "#666", fontSize: 13, marginTop: 2 },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 4, marginTop: 8 },
+  sectionLabel: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6, marginBottom: 2 },
   sectionIconBg: { width: 34, height: 34, borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  sectionTitle: { color: "#FFF", fontWeight: "800", fontSize: 16 },
-  sectionSubtitle: { color: "#666", fontSize: 12, marginTop: 2 },
+  sectionTitle: { color: "#FFF", fontWeight: "800", fontSize: 15 },
+  sectionSub: { color: "#666", fontSize: 12, marginTop: 2 },
   card: {
     backgroundColor: "#1A1A1A", borderRadius: 20, padding: 16,
     flexDirection: "row", alignItems: "center", gap: 14,
     borderWidth: 1, borderColor: "#2A2A2A",
   },
-  rankBadge: { position: "absolute", top: -8, left: 12, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, zIndex: 1 },
+  cardBusy: { opacity: 0.65 },
+  rankBadge: {
+    position: "absolute", top: -8, left: 14,
+    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, zIndex: 1,
+  },
   rankText: { fontSize: 11, fontWeight: "800", color: "#000" },
   avatar: { width: 58, height: 58, borderRadius: 29, justifyContent: "center", alignItems: "center" },
   avatarText: { fontSize: 20, fontWeight: "800" },
-  info: { flex: 1, gap: 4 },
+  cardInfo: { flex: 1, gap: 3 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  workerName: { fontSize: 16, fontWeight: "700", color: "#FFF" },
+  workerName: { fontSize: 16, fontWeight: "700", color: "#FFF", flexShrink: 1 },
   onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#4CAF50" },
   category: { color: "#888", fontSize: 13 },
   ratingRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
   ratingText: { color: "#FFD700", fontSize: 12, fontWeight: "600", marginLeft: 2 },
-  dot: { color: "#444", fontSize: 12 },
-  experience: { color: "#666", fontSize: 12 },
-  rightSide: { alignItems: "center", gap: 6 },
-  distanceBadge: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "#FF6B00" + "20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
-  distanceText: { color: "#FF6B00", fontSize: 12, fontWeight: "700" },
-  eta: { color: "#888", fontSize: 11 },
+  dot: { color: "#444" },
+  exp: { color: "#666", fontSize: 12 },
+  cardRight: { alignItems: "center", gap: 6 },
+  distBadge: {
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: "#FF6B0022", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
+  },
+  distText: { color: "#FF6B00", fontSize: 12, fontWeight: "700" },
+  etaText: { color: "#888", fontSize: 11 },
   statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusText: { fontSize: 12, fontWeight: "700" },
-  noNearbyCard: {
+  noNearbyBanner: {
     flexDirection: "row", alignItems: "center", gap: 14,
     backgroundColor: "#1A1A1A", borderRadius: 20, padding: 18,
-    borderWidth: 1, borderColor: "#FF6B00" + "40",
+    borderWidth: 1, borderColor: "#FF6B0044",
   },
-  noNearbyIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#FF6B00" + "20", justifyContent: "center", alignItems: "center" },
-  noNearbyTitle: { color: "#FFF", fontWeight: "700", fontSize: 16 },
-  noNearbySubtitle: { color: "#888", fontSize: 13, marginTop: 4, lineHeight: 18 },
-  emptyFull: { alignItems: "center", paddingVertical: 60, gap: 12 },
+  noNearbyIcon: {
+    width: 50, height: 50, borderRadius: 25,
+    backgroundColor: "#FF6B0018", justifyContent: "center", alignItems: "center",
+  },
+  noNearbyTitle: { color: "#FFF", fontWeight: "700", fontSize: 15 },
+  noNearbyDesc: { color: "#888", fontSize: 13, marginTop: 4, lineHeight: 18 },
+  empty: { alignItems: "center", paddingVertical: 60, gap: 12 },
   emptyTitle: { fontSize: 20, fontWeight: "700", color: "#FFF" },
-  emptySubtitle: { color: "#666", fontSize: 14, textAlign: "center", lineHeight: 22 },
-  retryBtn: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#FF6B00", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, marginTop: 8 },
+  emptySub: { color: "#555", fontSize: 14, textAlign: "center", lineHeight: 22 },
+  retryBtn: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: "#FF6B00", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, marginTop: 8,
+  },
   retryText: { color: "#FFF", fontWeight: "700" },
 });
