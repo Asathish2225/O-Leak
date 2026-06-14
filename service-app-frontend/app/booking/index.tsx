@@ -10,9 +10,13 @@ import api from "@/utils/api";
 const TIME_SLOTS = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"];
 
 export default function BookingScreen() {
-  const { workerId, workerName, distance, eta, serviceName } = useLocalSearchParams<{
-    workerId: string; workerName: string; distance: string; eta: string; serviceName: string;
-  }>();
+  const {
+    workerId,
+    workerName,
+    distance = "N/A",
+    eta = "N/A",
+    serviceName,
+  } = useLocalSearchParams();
 
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");

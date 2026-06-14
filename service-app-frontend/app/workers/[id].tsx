@@ -158,47 +158,17 @@ export default function WorkersScreen() {
 
   const load = async () => {
     try {
-      // Step 1: Get location silently
-      let lat = 13.0827, lng = 80.2707;
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === "granted") {
-          const loc = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Low,
-          });
-          lat = loc.coords.latitude;
-          lng = loc.coords.longitude;
-        }
-      } catch (_) {}
-      setUserCoords({ lat, lng });
+      setLoading(true);
 
-//       // Step 2: Fetch nearby workers (5 km)
-//       let nearby: any[] = [];
-//       try {
-//         const r = await api.get("/api/workers/nearby", {
-//           params: { serviceId: id, latitude: lat, longitude: lng },
-//         });
-//         nearby = Array.isArray(r.data) ? r.data : [];
-//       } catch (_) {}
-//       setNearbyWorkers(nearby);
+      console.log("Selected category:", id);
 
-      // Step 3: Fetch ALL workers → filter by this service as fallback
-      const load = async () => {
-        try {
-          setLoading(true);
+      const response = await api.get(`/api/workers/by-category/${id}`);
 
-          const response = await api.get(
-            `/api/workers/by-category/${id}`
-          );
+      console.log("Workers Response:", response.data);
 
-          setOtherWorkers(response.data || []);
-
-        } catch (err) {
-          console.log(err);
-        } finally {
-          setLoading(false);
-        }
-      };
+      setOtherWorkers(response.data || []);
+    } catch (e) {
+      console.log("Workers API Error:", e);
     } finally {
       setLoading(false);
       setRefreshing(false);

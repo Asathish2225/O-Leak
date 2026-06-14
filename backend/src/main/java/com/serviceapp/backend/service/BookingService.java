@@ -24,8 +24,8 @@ public class BookingService {
         Worker worker = workerRepository.findById(request.getWorkerId())
                 .orElseThrow(() -> new RuntimeException("Worker Not Found"));
 
-        if (!worker.getAvailable()) {
-            return "Worker Not Available";
+        if (worker.getAvailable()==null) {
+            throw new RuntimeException("Worker not available");
         }
 
         Booking booking = new Booking();

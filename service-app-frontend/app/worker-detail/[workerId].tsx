@@ -14,12 +14,13 @@ const FAKE_REVIEWS = [
 
 export default function WorkerDetailScreen() {
   const {
-    workerId, workerName, distance, eta,
-    serviceId, serviceName,
-  } = useLocalSearchParams<{
-    workerId: string; workerName: string; distance: string;
-    eta: string; serviceId: string; serviceName: string;
-  }>();
+    workerId,
+    workerName,
+    distance = "N/A",
+    eta = "N/A",
+    serviceId,
+    serviceName,
+  } = useLocalSearchParams();
 
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"about" | "reviews">("about");
