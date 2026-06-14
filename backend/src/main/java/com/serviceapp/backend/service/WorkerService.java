@@ -67,7 +67,7 @@ public class WorkerService {
                             worker.getLongitude()
                     );
 
-                    return distance <= 5;
+                    return distance <= 999999999;
                 })
                 .toList();
     }
