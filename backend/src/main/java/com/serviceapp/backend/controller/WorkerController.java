@@ -30,12 +30,10 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.getAllWorkers());
     }
 
-    @GetMapping("/nearby")
-    public ResponseEntity<List<Worker>> getNearbyWorkers(
-            @RequestParam Long serviceId,
-            @RequestParam Double latitude,
-            @RequestParam Double longitude
+    @GetMapping("/by-category/{categoryId}")
+    public ResponseEntity<List<Worker>> getWorkersByCategory(
+            @PathVariable Long categoryId
     ) {
-        return ResponseEntity.ok(workerService.getNearbyWorkers(serviceId, latitude, longitude));
+        return ResponseEntity.ok(workerService.getWorkersByServiceCategory(categoryId));
     }
 }

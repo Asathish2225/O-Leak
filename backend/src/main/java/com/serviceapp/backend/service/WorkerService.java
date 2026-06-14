@@ -48,51 +48,7 @@ public class WorkerService {
         return workerRepository.findAll();
     }
 
-    public List<Worker> getNearbyWorkers(
-            Long serviceId,
-            Double customerLat,
-            Double customerLon
-    ) {
-
-        List<Worker> workers =
-                workerRepository.findByAvailableTrueAndServiceCategoryId(serviceId);
-
-        return workers.stream()
-                .filter(worker -> {
-
-                    double distance = calculateDistance(
-                            customerLat,
-                            customerLon,
-                            worker.getLatitude(),
-                            worker.getLongitude()
-                    );
-
-                    return distance <= 999999999;
-                })
-                .toList();
-    }
-
-    private double calculateDistance(
-            double lat1,
-            double lon1,
-            double lat2,
-            double lon2
-    ) {
-
-        final int EARTH_RADIUS = 6371;
-
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-
-        double a =
-                Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                        + Math.cos(Math.toRadians(lat1))
-                        * Math.cos(Math.toRadians(lat2))
-                        * Math.sin(lonDistance / 2)
-                        * Math.sin(lonDistance / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return EARTH_RADIUS * c;
+    public List<Worker> getWorkersByServiceCategory(Long serviceId) {
+        return workerRepository.findByAvailableTrueAndServiceCategoryId(serviceId);
     }
 }
