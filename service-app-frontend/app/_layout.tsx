@@ -8,15 +8,17 @@ function RootNavigator() {
   const router = useRouter();
   const segments = useSegments();
 
-  useEffect(() => {
-    if (isLoading) return;
-    const inAuthGroup = segments[0] === "(tabs)";
-    if (!token && inAuthGroup) {
-      router.replace("/login");
-    } else if (token && !inAuthGroup) {
-      router.replace("/(tabs)");
-    }
-  }, [token, isLoading, segments]);
+ useEffect(() => {
+   if (isLoading) return;
+
+   const isPublicRoute =
+     segments[0] === "login" ||
+     segments[0] === "register";
+
+   if (!token && !isPublicRoute) {
+     router.replace("/login");
+   }
+ }, [token, isLoading, segments]);
 
   if (isLoading) {
     return (

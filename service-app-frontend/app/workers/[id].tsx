@@ -172,28 +172,33 @@ export default function WorkersScreen() {
       } catch (_) {}
       setUserCoords({ lat, lng });
 
-      // Step 2: Fetch nearby workers (5 km)
-      let nearby: any[] = [];
-      try {
-        const r = await api.get("/api/workers/nearby", {
-          params: { serviceId: id, latitude: lat, longitude: lng },
-        });
-        nearby = Array.isArray(r.data) ? r.data : [];
-      } catch (_) {}
-      setNearbyWorkers(nearby);
+//       // Step 2: Fetch nearby workers (5 km)
+//       let nearby: any[] = [];
+//       try {
+//         const r = await api.get("/api/workers/nearby", {
+//           params: { serviceId: id, latitude: lat, longitude: lng },
+//         });
+//         nearby = Array.isArray(r.data) ? r.data : [];
+//       } catch (_) {}
+//       setNearbyWorkers(nearby);
 
       // Step 3: Fetch ALL workers → filter by this service as fallback
-      try {
-        const allRes = await api.get("/api/workers");
-        const all: any[] = Array.isArray(allRes.data) ? allRes.data : [];
-        const nearbyIds = new Set(nearby.map((w: any) => w.id));
-        const others = all.filter(
-          (w: any) =>
-            !nearbyIds.has(w.id) &&
-            String(w.serviceCategory?.id) === String(id)
-        );
-        setOtherWorkers(others);
-      } catch (_) {}
+      const load = async () => {
+        try {
+          setLoading(true);
+
+          const response = await api.get(
+            `/api/workers/by-category/${id}`
+          );
+
+          setOtherWorkers(response.data || []);
+
+        } catch (err) {
+          console.log(err);
+        } finally {
+          setLoading(false);
+        }
+      };
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -201,18 +206,7 @@ export default function WorkersScreen() {
   };
 
   const handlePress = (item: any, km: string, eta: string) => {
-    router.push({
-      pathname: "/worker-detail/[workerId]",
-      params: {
-        workerId: item.id.toString(),
-        workerName: item.fullName,
-        distance: km,
-        eta,
-        serviceId: id,
-        serviceName: name,
-        available: item.available ? "true" : "false",
-      },
-    });
+    router.push(`/worker-detail/${item.id}`);
   };
 
   const total = nearbyWorkers.length + otherWorkers.length;

@@ -26,12 +26,20 @@ export default function WorkerDetailScreen() {
 
   const initials = workerName?.split(" ").map(n => n[0]).join("").toUpperCase() ?? "W";
 
-  const handleBook = () => {
-    router.push({
-      pathname: "/booking",
-      params: { workerId, workerName, distance, eta, serviceName },
-    });
-  };
+ const handleBook = () => {
+   console.log("BOOK NOW CLICKED");
+
+   router.push({
+     pathname: "/booking",
+     params: {
+       workerId,
+       workerName,
+       distance,
+       eta,
+       serviceName,
+     },
+   });
+ };
 
   return (
     <View style={styles.root}>
